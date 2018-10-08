@@ -1,3 +1,5 @@
+const { Readable } = require('stream')
+
 const scrapeIndex = require('./lib/index')
 const scrapeReport = require('./lib/report')
 
@@ -17,9 +19,38 @@ const { DEFAULT_INDEX_URL, FIRST_PAGE, urlOfPage } = require('./lib/constants')
  * 
  * 
  */
+class ReportStream extends Readable{
+  constructor(queue){
+    //Call the Readable Stream constructor
+    super({
+      objectMode: true
+    })
+
+    this.queue = queue
+    this.queue.onData = (data) => {
+      return this.push(data)
+    }
+    this.queue.onEnd = (data) => {
+      this.push(data)
+      this.push(null)
+    }
+  }
+
+  /*
+   * Implementation of Readable
+   * see: https://nodejs.org/api/stream.html#stream_implementing_a_readable_stream
+   */
+  _read(){
+    this.queue.readStart()
+//    this.next() //start fetching reports and outputting report objects
+  }
 
 
-class RequestsQueue{
+}
+
+let qCount = 0
+
+class RequestsQueue  {
   constructor( pageCount, reportsURLs = [], groupSize, groupInterval, stopAtReportURI ){
     this.pageCount = pageCount
     this.currentPage = FIRST_PAGE
@@ -30,18 +61,41 @@ class RequestsQueue{
     this.requestsGroup = []
 
     this.stopAtReportURI = stopAtReportURI
+    this.timeout
+    this.started = false
     this.done = false
+
+    
+    this.me = qCount++
+
+    this.onData = () => true
+    this.onEnd = () => {}
   }
+
+
 
   isDone(){
     return this.done || (this.reportsURLs.length == 0 && this.currentPage == this.pageCount)
   }
 
+  readStart(){
+    if(!this.started){
+      this.started = true
+      this.next()
+    }
+  }
+
   async next(){
+    if( this.timeout ){
+      return //wait for the interval between calls to pass
+    }
+
+    this.timeout = undefined
+    
     if( this.isDone() ){
+      this.onEnd() //done
       return
     }
-    
     if( this.reportsURLs.length == 0 ){ //all the reports of the page have been processed
       //Load next page
       this.currentPage++
@@ -61,16 +115,34 @@ class RequestsQueue{
       this.done = true
     }
 
-    return Promise.all( nextBatch.map( (url) => scrapeReport(url) ) )
-      .then( () => {
+
+    await Promise.all( nextBatch.map( (url) => scrapeReport(url) ) )
+      .then( async (reports) => {
+
         if( this.isDone() ){
-          return //no need to wait
+          clearTimeout( this.timeout )
+          this.timeout = undefined
+          const last = reports.pop()
+          reports.every( (report) => this.onData(report) )
+
+          this.onEnd( last ) //done
+          return
         }
 
         //Keep processing the queue after a pause
-        setTimeout( () => {
+        this.timeout = setTimeout( () => {
+          this.timeout = undefined
           this.next()
         }, this.groupInterval ) //wait a moment before continuing
+
+        const keepGoing = reports.every( (report) => this.onData(report) )
+
+        if( !keepGoing ){
+          clearTimeout( this.timeout )
+          this.timeout = undefined
+          this.onEnd()
+          return
+        }
       })
   }
 }
@@ -86,8 +158,7 @@ const scrape = async (options) => {
   const {reportsURLs, pageCount} = await scrapeIndex( DEFAULT_INDEX_URL )
 
   const queue = new RequestsQueue( pageCount, reportsURLs, opts.groupSize, opts.groupInterval, opts.stopAtReportURI )
-  //Async
-  queue.next()
+  return new ReportStream(queue)
 }
 
 module.exports = scrape
