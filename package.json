@@ -1,8 +1,8 @@
 {
   "name": "rwv-de-by-before",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "A web scraper for https://muenchen-chronik.de/chronik/",
-  "main": "index.js",
+  "main": "scrape.js",
   "scripts": {
     "test": "jest --config jest.config.js"
   },
@@ -18,7 +18,7 @@
     "before",
     "münchen"
   ],
-  "author": "Jonathan Crémieux",
+  "author": "Jonathan Crémieux <jonathan@krem.io> (https://krem.io/)",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/kremio/rwv-de-by-before/issues"
