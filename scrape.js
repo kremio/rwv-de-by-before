@@ -42,13 +42,11 @@ class ReportStream extends Readable{
    */
   _read(){
     this.queue.readStart()
-//    this.next() //start fetching reports and outputting report objects
   }
 
 
 }
 
-let qCount = 0
 
 class RequestsQueue  {
   constructor( pageCount, reportsURLs = [], groupSize, groupInterval, stopAtReportURI ){
@@ -64,9 +62,6 @@ class RequestsQueue  {
     this.timeout
     this.started = false
     this.done = false
-
-    
-    this.me = qCount++
 
     this.onData = () => true
     this.onEnd = () => {}
