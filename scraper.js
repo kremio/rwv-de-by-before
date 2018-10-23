@@ -7,21 +7,21 @@ const InsertStream = require('rwv-sqlite/lib/stream')
 const scrape = require('./scrape')
 
 //Setup the database
-const {DB, migrations} = getDB( path.resolve('./config/database.json') )
-
-//Get the last inserted report, if any
-new Promise( (s,f) => {
-  DB.db.get('SELECT uri FROM data ORDER BY createdDate DESC LIMIT 1', (err, row) => {
-    if(err){
-      f(err)
-      return
-    }
-    s(row ? row.uri : false)
+getDB( path.resolve('./config/database.json') )
+  .then( ({DB, migrations}) => new Promise( (s,f) => {
+    //Get the last inserted report, if any
+    DB.db.get('SELECT uri FROM data ORDER BY createdDate DESC LIMIT 1', (err, row) => {
+      if(err){
+        f(err)
+        return
+      }
+      s(DB, row ? row.uri : false)
+    })
   })
-}).then( (stopAtReportURI) => {
-  //Scrape and insert
-  const insertStream = new InsertStream({}, DB)
-  scrape({stopAtReportURI}).pipe(insertStream)
-}).catch( (e) => {
-  console.error(e)
-})
+  ).then( (DB, stopAtReportURI) => {
+    //Scrape and insert
+    const insertStream = new InsertStream({}, DB)
+    scrape({stopAtReportURI}).pipe(insertStream)
+  }).catch( (e) => {
+    console.error(e)
+  })
