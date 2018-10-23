@@ -31,7 +31,9 @@ class ReportStream extends Readable{
       return this.push(data)
     }
     this.queue.onEnd = (data) => {
-      this.push(data)
+      if(data){
+        this.push(data)
+      }
       this.push(null)
     }
   }
@@ -110,10 +112,8 @@ class RequestsQueue  {
       this.done = true
     }
 
-
     await Promise.all( nextBatch.map( (url) => scrapeReport(url) ) )
       .then( async (reports) => {
-
         if( this.isDone() ){
           clearTimeout( this.timeout )
           this.timeout = undefined
@@ -142,13 +142,17 @@ class RequestsQueue  {
   }
 }
 
-const scrape = async (options) => {
+const scrape = async (options, verbose = false) => {
   //Override defaults with given options
   const opts = Object.assign({
     groupSize: 5,
     groupInterval: 30000, //in ms
     stopAtReportURI: false
   }, options)
+
+  if(verbose){
+    console.log("## Scraper setup:", options)
+  }
 
   const {reportsURLs, pageCount} = await scrapeIndex( DEFAULT_INDEX_URL )
 

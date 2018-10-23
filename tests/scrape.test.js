@@ -218,4 +218,25 @@ describe('Scraper stream', () => {
 
   })
 
+  test( 'Nothing to scrape', async (done) => {
+    scrapeIndex.mockImplementationOnce(() => ({ //page 1
+      reportsURLs: [1],
+      pageCount: 3
+    }))
+
+    const reportStream = await scrape( { groupSize: 2, groupInterval: 1, stopAtReportURI: 1  } )
+
+
+    reportStream.on('data', (chunk) => {
+      done.fail( new Error('No chunk should have been emitted by the stream') )
+    })
+
+    reportStream.on('end', () => {
+      expect( scrapeIndex ).toHaveBeenCalledTimes(1)
+      expect( scrapeReport ).not.toHaveBeenCalled()
+      done()
+    })
+
+  })
+
 })
