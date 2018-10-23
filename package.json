@@ -2,6 +2,9 @@
   "name": "rwv-de-by-before",
   "version": "0.0.1",
   "description": "A web scraper for https://muenchen-chronik.de/chronik/",
+  "engines": {
+    "node": "10.7.0"
+  },
   "main": "scrape.js",
   "scripts": {
     "test": "jest --config jest.config.js"

@@ -11,7 +11,7 @@ const {DB, migrations} = getDB( path.resolve('./config/database.json') )
 
 //Get the last inserted report, if any
 new Promise( (s,f) => {
-  DB.db.get('SELECT uri FROM data ORDER BY createdDate LIMIT 1', (err, row) => {
+  DB.db.get('SELECT uri FROM data ORDER BY createdDate DESC LIMIT 1', (err, row) => {
     if(err){
       f(err)
       return
