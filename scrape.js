@@ -36,6 +36,17 @@ class ReportStream extends Readable{
       }
       this.push(null)
     }
+    this.queue.onError = (error) => {
+      this.emit('error', error)
+      this.push(null)
+    }
+  }
+
+  /*
+   * Useful to locate where a report makes the scraper choke.
+   */
+  get currentPageURL(){
+    return urlOfPage( this.queue.currentPage )
   }
 
   /*
@@ -55,6 +66,7 @@ class RequestsQueue  {
     this.pageCount = pageCount
     this.currentPage = FIRST_PAGE
     this.reportsURLs = reportsURLs
+    this.currentReportURL = ''
 
     this.groupSize = groupSize
     this.groupInterval = groupInterval
@@ -67,6 +79,7 @@ class RequestsQueue  {
 
     this.onData = () => true
     this.onEnd = () => {}
+    this.onError = (error) => { console.error(error) }
   }
 
 
@@ -83,62 +96,66 @@ class RequestsQueue  {
   }
 
   async next(){
-    if( this.timeout ){
-      return //wait for the interval between calls to pass
+    try{
+      if( this.timeout ){
+        return //wait for the interval between calls to pass
+      }
+
+      this.timeout = undefined
+
+      if( this.isDone() ){
+        this.onEnd() //done
+        return
+      }
+      if( this.reportsURLs.length == 0 ){ //all the reports of the page have been processed
+        //Load next page
+        this.currentPage++
+        const {reportsURLs} = await scrapeIndex( urlOfPage( this.currentPage ) )
+        this.reportsURLs = reportsURLs
+        return this.next()
+      }
+
+      //Get next batch of requests and remove them from the queue
+      let nextBatch = this.reportsURLs
+        .splice(0, this.groupSize )
+
+      if( this.stopAtReportURI && nextBatch.includes( this.stopAtReportURI ) ){
+        //Only process the reports up until the given URI and we are done!
+        const until = nextBatch.indexOf( this.stopAtReportURI )
+        nextBatch = nextBatch.splice(0, until)
+        this.done = true
+      }
+
+      await Promise.all( nextBatch.map( (url) => scrapeReport(url) ) )
+        .then( async (reports) => {
+          if( this.isDone() ){
+            clearTimeout( this.timeout )
+            this.timeout = undefined
+            const last = reports.pop()
+            reports.every( (report) => this.onData(report) )
+
+            this.onEnd( last ) //done
+            return
+          }
+
+          //Keep processing the queue after a pause
+          this.timeout = setTimeout( () => {
+            this.timeout = undefined
+            this.next()
+          }, this.groupInterval ) //wait a moment before continuing
+
+          const keepGoing = reports.every( (report) => this.onData(report) )
+
+          if( !keepGoing ){
+            clearTimeout( this.timeout )
+            this.timeout = undefined
+            this.onEnd()
+            return
+          }
+        })
+    }catch(e){
+      this.onError(e)
     }
-
-    this.timeout = undefined
-    
-    if( this.isDone() ){
-      this.onEnd() //done
-      return
-    }
-    if( this.reportsURLs.length == 0 ){ //all the reports of the page have been processed
-      //Load next page
-      this.currentPage++
-      const {reportsURLs} = await scrapeIndex( urlOfPage( this.currentPage ) )
-      this.reportsURLs = reportsURLs
-      return this.next()
-    }
-
-    //Get next batch of requests and remove them from the queue
-    let nextBatch = this.reportsURLs
-      .splice(0, this.groupSize )
-
-    if( this.stopAtReportURI && nextBatch.includes( this.stopAtReportURI ) ){
-      //Only process the reports up until the given URI and we are done!
-      const until = nextBatch.indexOf( this.stopAtReportURI )
-      nextBatch = nextBatch.splice(0, until)
-      this.done = true
-    }
-
-    await Promise.all( nextBatch.map( (url) => scrapeReport(url) ) )
-      .then( async (reports) => {
-        if( this.isDone() ){
-          clearTimeout( this.timeout )
-          this.timeout = undefined
-          const last = reports.pop()
-          reports.every( (report) => this.onData(report) )
-
-          this.onEnd( last ) //done
-          return
-        }
-
-        //Keep processing the queue after a pause
-        this.timeout = setTimeout( () => {
-          this.timeout = undefined
-          this.next()
-        }, this.groupInterval ) //wait a moment before continuing
-
-        const keepGoing = reports.every( (report) => this.onData(report) )
-
-        if( !keepGoing ){
-          clearTimeout( this.timeout )
-          this.timeout = undefined
-          this.onEnd()
-          return
-        }
-      })
   }
 }
 

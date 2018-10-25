@@ -239,4 +239,43 @@ describe('Scraper stream', () => {
 
   })
 
+  test( 'Throws parsing error and ends stream', async (done) => {
+
+    scrapeIndex.mockImplementationOnce(() => ({ //page 1
+      reportsURLs: [1],
+      pageCount: 3
+    })).mockImplementationOnce(() => ({ //page 2
+      reportsURLs: [2,3],
+    })).mockImplementationOnce(() => ({ //page 3
+      reportsURLs: [4,5],
+    }))
+
+
+    scrapeReport.mockImplementation((url) => {
+      if(url == 3){
+        throw new Error('Parsing failed')
+      }
+    })
+
+    const reportStream = await scrape( { groupSize: 2, groupInterval: 1  } )
+
+
+    reportStream.on('error', (err) => {
+      expect( err.message ).toEqual('Parsing failed')
+    })
+
+
+    reportStream.on('end', () => {
+      expect( scrapeIndex ).toHaveBeenCalledTimes(2)
+      expect( scrapeReport ).toHaveBeenCalledTimes(3)
+      done()
+    })
+
+    reportStream.on('data', (chunk) => {
+      jest.runOnlyPendingTimers()
+    })
+
+
+  })
+
 })
