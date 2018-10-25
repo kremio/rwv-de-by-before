@@ -51,6 +51,11 @@ module.exports = {
     startDate: (new Date( "2016-05-01" ) ).toISOString(),
     endDate: (new Date( "2016-05-31" ) ).toISOString(),
     title: "Unbekannte ritzen Hakenkreuz in Auto vor Moschee"
+  },
+  "https://muenchen-chronik.de/maerz-2016-verurteilung-wegen-uebergriffen/":{
+    startDate: (new Date( "2016-03-01" ) ).toISOString(),
+    endDate: (new Date( "2016-03-31" ) ).toISOString(),
+    title: "Verurteilung wegen Übergriffen"
   }
   
 }
