@@ -11,4 +11,8 @@ module.exports = {
    * [startDate, endDate, title]
    * [locations, motives, factums, contexts]
    */
+  "https://muenchen-chronik.de/5-juli-pegida-kundgebung/":{
+    startDate: ( new Date( "2017-07-05" ) ).toISOString(), //5. Juli 2017
+    title: "Pegida – Kundgebung"
+  }
 }
