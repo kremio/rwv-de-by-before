@@ -23,11 +23,33 @@ const pipeline = async () => getDB( path.resolve('./config/database.json'), fals
         return
       }
       insert = new InsertStream({}, DB)
-      s( row ? row.uri : false )
+      s( {stopAtReportURI: row ? row.uri : false} )
     })
   })
   )
-  .then( (stopAtReportURI) => scrape({stopAtReportURI}, true) )
+  .then( async (scraperOptions) => {
+
+    //Parameters passed by env variables have priority
+    if( process.env.SCRAPER_START_PAGE && process.env.SCRAPER_START_REPORT ){
+      return Object.assign( scraperOptions, {
+        startAtReportURI: process.env.SCRAPER_START_REPORT,
+        startAtPageURL: process.env.SCRAPER_START_PAGE
+      })
+    }
+
+    //Check if they are any error from which to start from
+    const error = await errorTable.get( dbHandle )
+    //Consume the error
+    await errorTable.clear( dbHandle )
+    if(!error){
+      return scraperOptions
+    }
+    return Object.assign( scraperOptions, {
+      startAtReportURI: error.reportURI != "NA" ? error.reportURI : false,
+      startAtPageURL: error.pageURL
+    })
+  })
+  .then( (scraperOptions) => scrape(scraperOptions, true) )
   .then( (scraperStream) => {
     source = scraperStream
   })
@@ -49,7 +71,7 @@ const pipeline = async () => getDB( path.resolve('./config/database.json'), fals
     }
   }) )
   .catch( (e) => {
-    const reportURI = e.reportURI || 'unknown or non-applicable'
+    const reportURI = e.reportURI || 'NA'
     const pageURL = source.currentPageURL
     const cause = JSON.stringify( e.message )
     //save th error to the database

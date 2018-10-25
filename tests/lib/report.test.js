@@ -1,6 +1,6 @@
-const specialCases = require('../../lib/special-cases')
+const specialCases = require('../../special-cases')
 
-jest.mock('../../lib/special-cases', () => ({
+jest.mock('../../special-cases', () => ({
   "https://domain.tld/path/to/page_override.html":{
     startDate:( new Date() ).toISOString()
   }

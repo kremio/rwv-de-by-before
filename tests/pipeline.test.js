@@ -16,6 +16,9 @@ describe( 'Scraper pipeline', () => {
   let db
 
   beforeEach( async (done) => {
+    delete process.env.SCRAPER_START_PAGE
+    delete process.env.SCRAPER_START_REPORT
+
     scrape.mockReset()
     InsertStream.mockReset()
     getDB().then( ({DB, migrations}) =>{
@@ -120,5 +123,97 @@ describe( 'Scraper pipeline', () => {
     expect( storedError.pageURL ).toEqual( pageURL )
     done()
 
+  })
+
+  test( 'Start from last error page and report', async() => {
+    const {DB} = await getDB()
+    db = DB
+
+    //Record an error
+    const errorReportURI = "errorReportURI"
+    const errorPageURL = "errorPageURL"
+    await errorTable.insert( errorReportURI, "some error message", errorPageURL, db )
+
+    try{
+      await pipeline()
+    }catch(e){}
+
+    expect( scrape ).toBeCalledWith( expect.objectContaining({
+      startAtPageURL: errorPageURL,
+      startAtReportURI: errorReportURI
+    }), expect.anything() )
+
+    //errors should have been cleared
+    const error = await errorTable.get( db )
+    expect( error ).toBeUndefined()
+
+  })
+
+  test( 'Start from last error page (no report uri)', async() => {
+    const {DB} = await getDB()
+    db = DB
+
+    //Record an error
+    const errorReportURI = "NA"
+    const errorPageURL = "errorPageURL"
+    await errorTable.insert( errorReportURI, "some error message", errorPageURL, db )
+
+    try{
+      await pipeline()
+    }catch(e){}
+
+    expect( scrape ).toBeCalledWith( expect.objectContaining({
+      startAtPageURL: errorPageURL,
+      startAtReportURI: false
+    }), expect.anything() )
+
+    //errors should have been cleared
+    const error = await errorTable.get( db )
+    expect( error ).toBeUndefined()
+  })
+
+  test( 'Start from given page and report given by environment variables', async() => {
+    jest.resetModules()
+    process.env.SCRAPER_START_PAGE = "envStartPage"
+    process.env.SCRAPER_START_REPORT = "envStartReport"
+
+    const _pipeline = require('../pipeline')
+    const _scrape = require('../scrape')
+    
+    try{
+      await _pipeline()
+    }catch(e){}
+
+    expect( _scrape ).toBeCalledWith( expect.objectContaining({
+      startAtPageURL: process.env.SCRAPER_START_PAGE,
+      startAtReportURI: process.env.SCRAPER_START_REPORT
+    }), expect.anything() )
+
+  })
+
+  test( 'Parameters passed by env variables have priority over error', async() => {
+    jest.resetModules()
+    process.env.SCRAPER_START_PAGE = "envStartPage2"
+    process.env.SCRAPER_START_REPORT = "envStartReport2"
+
+    const {DB} = await require('rwv-sqlite/lib/db')()
+    db = DB
+
+    //Record an error
+    const errorReportURI = "NA"
+    const errorPageURL = "errorPageURL"
+    await errorTable.insert( errorReportURI, "some error message", errorPageURL, db )
+
+    const _pipeline = require('../pipeline')
+    const _scrape = require('../scrape')
+    
+    try{
+      await _pipeline()
+    }catch(e){}
+
+    expect( _scrape ).toBeCalledWith( expect.objectContaining({
+      startAtPageURL: process.env.SCRAPER_START_PAGE,
+      startAtReportURI: process.env.SCRAPER_START_REPORT
+    }), expect.anything() )
   })
 })
