@@ -35,6 +35,12 @@ module.exports = {
     startDate: ( new Date( "2016-02-01" ) ).toISOString(),
     endDate: ( new Date('2016-02-31') ).toISOString(),
     title: "Rechtsradikale Drohungen"
+  },
+
+  "https://muenchen-chronik.de/6-7-april-2017-missionierung-gefluechteter/":{
+    startDate: (new Date( "2017-04-06" ) ).toISOString(),
+    endDate: (new Date( "2017-04-07" ) ).toISOString(),
+    title: "Missionierung Geflüchteter"
   }
   
 }
