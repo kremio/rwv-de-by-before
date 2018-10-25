@@ -16,8 +16,8 @@ describe( 'Scraper pipeline', () => {
   let db
 
   beforeEach( async (done) => {
-    delete process.env.SCRAPER_START_PAGE
-    delete process.env.SCRAPER_START_REPORT
+    delete process.env.MORPH_START_PAGE
+    delete process.env.MORPH_START_REPORT
 
     scrape.mockReset()
     InsertStream.mockReset()
@@ -174,8 +174,8 @@ describe( 'Scraper pipeline', () => {
 
   test( 'Start from given page and report given by environment variables', async() => {
     jest.resetModules()
-    process.env.SCRAPER_START_PAGE = "envStartPage"
-    process.env.SCRAPER_START_REPORT = "envStartReport"
+    process.env.MORPH_START_PAGE = "envStartPage"
+    process.env.MORPH_START_REPORT = "envStartReport"
 
     const _pipeline = require('../pipeline')
     const _scrape = require('../scrape')
@@ -185,16 +185,16 @@ describe( 'Scraper pipeline', () => {
     }catch(e){}
 
     expect( _scrape ).toBeCalledWith( expect.objectContaining({
-      startAtPageURL: process.env.SCRAPER_START_PAGE,
-      startAtReportURI: process.env.SCRAPER_START_REPORT
+      startAtPageURL: process.env.MORPH_START_PAGE,
+      startAtReportURI: process.env.MORPH_START_REPORT
     }), expect.anything() )
 
   })
 
   test( 'Parameters passed by env variables have priority over error', async() => {
     jest.resetModules()
-    process.env.SCRAPER_START_PAGE = "envStartPage2"
-    process.env.SCRAPER_START_REPORT = "envStartReport2"
+    process.env.MORPH_START_PAGE = "envStartPage2"
+    process.env.MORPH_START_REPORT = "envStartReport2"
 
     const {DB} = await require('rwv-sqlite/lib/db')()
     db = DB
@@ -212,8 +212,8 @@ describe( 'Scraper pipeline', () => {
     }catch(e){}
 
     expect( _scrape ).toBeCalledWith( expect.objectContaining({
-      startAtPageURL: process.env.SCRAPER_START_PAGE,
-      startAtReportURI: process.env.SCRAPER_START_REPORT
+      startAtPageURL: process.env.MORPH_START_PAGE,
+      startAtReportURI: process.env.MORPH_START_REPORT
     }), expect.anything() )
   })
 })

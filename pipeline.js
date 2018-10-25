@@ -30,10 +30,10 @@ const pipeline = async () => getDB( path.resolve('./config/database.json'), fals
   .then( async (scraperOptions) => {
 
     //Parameters passed by env variables have priority
-    if( process.env.SCRAPER_START_PAGE && process.env.SCRAPER_START_REPORT ){
+    if( process.env.MORPH_START_PAGE && process.env.MORPH_START_REPORT ){
       return Object.assign( scraperOptions, {
-        startAtReportURI: process.env.SCRAPER_START_REPORT,
-        startAtPageURL: process.env.SCRAPER_START_PAGE
+        startAtReportURI: process.env.MORPH_START_REPORT,
+        startAtPageURL: process.env.MORPH_START_PAGE
       })
     }
 
