@@ -23,6 +23,7 @@ jest.mock('request')
 const sampleReport = fs.readFileSync('./tests/samples/report.html', 'utf8')
 const reportWithoutYear = fs.readFileSync('./tests/samples/report_no_year.html', 'utf8')
 const reportWithShortDateInSource = fs.readFileSync('./tests/samples/short_date_in_sources.html', 'utf8')
+const daysSeparatedWithEm = fs.readFileSync('./tests/samples/daysSeparatedWithEm.html', 'utf8')
 
 request.mockImplementation((...args) => {
   const cb = args.pop()
@@ -75,3 +76,16 @@ test( 'Parse shortdate notation in source', async() => {
   const result = await scrapeReport( 'https://domain.tld/path/to/page.html' )
   expect( validateSchema(result) ).toBeTruthy()
 })
+
+
+test( 'Parse days separated with em', async() => {
+  request.mockImplementationOnce((...args) => {
+      const cb = args.pop()
+      cb( null, {statusCode: 200}, daysSeparatedWithEm )
+  })
+  const result = await scrapeReport( 'https://domain.tld/path/to/page.html' )
+  expect( validateSchema(result) ).toBeTruthy()
+})
+
+
+
