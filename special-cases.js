@@ -46,6 +46,11 @@ module.exports = {
     startDate: (new Date( "2016-05-31" ) ).toISOString(),
     endDate: (new Date( "2016-06-01" ) ).toISOString(),
     title: "Unbekannte ritzen Hakenkreuz in Auto vor Moschee"
+  },
+  "https://muenchen-chronik.de/mai-2016-rassistische-beschimpfungen-und-drohungen/":{
+    startDate: (new Date( "2016-05-01" ) ).toISOString(),
+    endDate: (new Date( "2016-05-31" ) ).toISOString(),
+    title: "Unbekannte ritzen Hakenkreuz in Auto vor Moschee"
   }
   
 }
