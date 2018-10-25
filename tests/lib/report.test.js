@@ -22,6 +22,8 @@ jest.mock('request')
 //Use a pre-fetched sample report
 const sampleReport = fs.readFileSync('./tests/samples/report.html', 'utf8')
 const reportWithoutYear = fs.readFileSync('./tests/samples/report_no_year.html', 'utf8')
+const reportWithShortDateInSource = fs.readFileSync('./tests/samples/short_date_in_sources.html', 'utf8')
+
 request.mockImplementation((...args) => {
   const cb = args.pop()
   cb( null, {statusCode: 200}, sampleReport )
@@ -63,4 +65,13 @@ test( 'Use special cases values', async() => {
   const result = await scrapeReport( 'https://domain.tld/path/to/page_override.html' )
   expect( validateSchema(result) ).toBeTruthy()
 
+})
+
+test( 'Parse shortdate notation in source', async() => {
+  request.mockImplementationOnce((...args) => {
+      const cb = args.pop()
+      cb( null, {statusCode: 200}, reportWithShortDateInSource )
+  })
+  const result = await scrapeReport( 'https://domain.tld/path/to/page.html' )
+  expect( validateSchema(result) ).toBeTruthy()
 })
