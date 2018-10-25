@@ -25,6 +25,7 @@ const reportWithoutYear = fs.readFileSync('./tests/samples/report_no_year.html',
 const reportWithShortDateInSource = fs.readFileSync('./tests/samples/short_date_in_sources.html', 'utf8')
 const daysSeparatedWithEm = fs.readFileSync('./tests/samples/daysSeparatedWithEm.html', 'utf8')
 const sourceWithMultipleDates = fs.readFileSync('./tests/samples/sourceWithMultipleDates.html', 'utf8')
+const anonymousSource =fs.readFileSync('./tests/samples/anonymousSource.html', 'utf8')
 
 request.mockImplementation((...args) => {
   const cb = args.pop()
@@ -98,5 +99,12 @@ test( 'Only use last date for source with multiple dates', async() => {
   expect( result.sources[2].publishedDate ).toEqual( '2017-07-29T22:00:00.000Z' )
 })
 
-
-
+test( 'Add anonymous source if none available', async() => {
+  request.mockImplementationOnce((...args) => {
+    const cb = args.pop()
+    cb( null, {statusCode: 200}, anonymousSource )
+  })
+  const result = await scrapeReport( 'https://domain.tld/path/to/page.html' )
+  expect( validateSchema(result) ).toBeTruthy()
+  expect( result.sources[0].name ).toEqual('anonymous')
+})
