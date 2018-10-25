@@ -3,7 +3,7 @@ const { Readable } = require('stream')
 const scrapeIndex = require('./lib/index')
 const scrapeReport = require('./lib/report')
 
-const { DEFAULT_INDEX_URL, FIRST_PAGE, urlOfPage } = require('./lib/constants')
+const { DEFAULT_INDEX_URL, FIRST_PAGE, urlOfPage, pageNumberOfURL } = require('./lib/constants')
 /*
  * 1: Parse the default index page at https://muenchen-chronik.de/chronik/
  * 2a: If there is a given 'untilReportURI', scrape the reports from the default page until untilReportURI is reached
@@ -62,16 +62,18 @@ class ReportStream extends Readable{
 
 
 class RequestsQueue  {
-  constructor( pageCount, reportsURLs = [], groupSize, groupInterval, stopAtReportURI ){
+  constructor( pageCount, reportsURLs = [], groupSize, groupInterval, startPageURL, startAtReportURI = false, stopAtReportURI ){
     this.pageCount = pageCount
-    this.currentPage = FIRST_PAGE
-    this.reportsURLs = reportsURLs
+    this.currentPage = pageNumberOfURL(startPageURL)
+    this.initialReportsURLs = reportsURLs
+    this._reportsURLs = []
     this.currentReportURL = ''
 
     this.groupSize = groupSize
     this.groupInterval = groupInterval
     this.requestsGroup = []
 
+    this.startAtReportURI = startAtReportURI
     this.stopAtReportURI = stopAtReportURI
     this.timeout
     this.started = false
@@ -82,7 +84,25 @@ class RequestsQueue  {
     this.onError = (error) => { console.error(error) }
   }
 
+  get reportsURLs(){
+    return this._reportsURLs
+  }
 
+  set reportsURLs( urls ){
+    if( !this.startAtReportURI ){
+      this._reportsURLs = urls
+      return
+    }
+    //If the scraper was configured to start at a specific report
+    //we need to filter out the other reports
+    const findIndex = urls.findIndex( (url) => url == this.startAtReportURI )
+    if( findIndex < 0 ){ //could not find the url, it could be in next page
+      this._reportsURLs = []
+      return
+    }
+    this.startAtReportURI = false //so we don't waste time filtering again
+    this._reportsURLs = urls.slice( findIndex )
+  }
 
   isDone(){
     return this.done || (this.reportsURLs.length == 0 && this.currentPage == this.pageCount)
@@ -91,6 +111,8 @@ class RequestsQueue  {
   readStart(){
     if(!this.started){
       this.started = true
+      //Sets the initial reportURLs
+      this.reportsURLs = this.initialReportsURLs
       this.next()
     }
   }
@@ -164,16 +186,20 @@ const scrape = async (options, verbose = false) => {
   const opts = Object.assign({
     groupSize: 5,
     groupInterval: 30000, //in ms
-    stopAtReportURI: false
+    stopAtReportURI: false,
+    startAtReportURI: false,
+    startAtPageURL: DEFAULT_INDEX_URL
   }, options)
 
   if(verbose){
-    console.log("## Scraper setup:", options)
+    console.log("## Scraper setup:", opts)
   }
 
-  const {reportsURLs, pageCount} = await scrapeIndex( DEFAULT_INDEX_URL )
 
-  const queue = new RequestsQueue( pageCount, reportsURLs, opts.groupSize, opts.groupInterval, opts.stopAtReportURI )
+
+  const {reportsURLs, pageCount} = await scrapeIndex( opts.startAtPageURL )
+
+  const queue = new RequestsQueue( pageCount, reportsURLs, opts.groupSize, opts.groupInterval, opts.startAtPageURL, opts.startAtReportURI, opts.stopAtReportURI )
   return new ReportStream(queue)
 }
 

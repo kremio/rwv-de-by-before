@@ -147,6 +147,64 @@ describe('Scraper stream', () => {
     })
 
   })
+
+  test( 'Start scraping at given report URI (included) and given page URL', async (done) => {
+    const startAtPageURL = urlOfPage(2)
+    const startAtReportURI = 2
+    scrapeIndex.mockImplementationOnce(() => ({ //page 1
+      reportsURLs: [1,2,3],
+      pageCount: 3
+    })).mockImplementationOnce(() => ({ //page 2
+      reportsURLs: [4],
+    }))
+    
+    const reportStream = await scrape( { startAtPageURL, startAtReportURI, groupSize: 2, groupInterval: 1, stopAtReportURI: 1  } )
+
+    let c = 0
+    reportStream.on('data', async(chunk) => {
+      switch( c ){
+        case 1:
+          throw new Error("Should not have scraped this report.")
+          break
+        default:
+          jest.runOnlyPendingTimers()
+      }
+    })
+
+    reportStream.on('end', () => {
+      expect( scrapeIndex ).toHaveBeenCalledTimes(2)
+      expect( scrapeReport ).toHaveBeenCalledTimes(3)
+      expect( scrapeReport ).toHaveBeenCalledWith( 2 )
+      expect( scrapeReport ).toHaveBeenCalledWith( 3 )
+      expect( scrapeReport ).toHaveBeenCalledWith( 4 )
+      done()
+    })
+
+  })
+
+  test( 'No scraping if start report URI not found', async (done) => {
+    const startAtPageURL = urlOfPage(2)
+    const startAtReportURI = 5
+    scrapeIndex.mockImplementationOnce(() => ({ //page 2
+      reportsURLs: [1,2,3],
+      pageCount: 3
+    })).mockImplementationOnce(() => ({ //page 3
+      reportsURLs: [4],
+    }))
+
+    const reportStream = await scrape( { startAtPageURL, startAtReportURI, groupSize: 2, groupInterval: 1, stopAtReportURI: 1  } )
+
+    reportStream.on('data', async(chunk) => {
+      throw new Error("Should not have scraped this report.")
+    })
+
+    reportStream.on('end', () => {
+      expect( scrapeIndex ).toHaveBeenCalledTimes(2)
+      expect( scrapeReport ).not.toHaveBeenCalled()
+      done()
+    })
+
+  })
   
   test( 'Stop scraping at given report URI (excluded)', async (done) => {
     scrapeIndex.mockImplementationOnce(() => ({ //page 1
@@ -183,6 +241,44 @@ describe('Scraper stream', () => {
       expect( scrapeReport ).toHaveBeenCalledWith( 2 )
       done()
     })
+
+  })
+
+  test( 'Only scrape reports between start URI and end URI (excluded)', async(done) => {
+
+    scrapeIndex.mockImplementationOnce(() => ({ //page 1
+      reportsURLs: [1,2],
+      pageCount: 3
+    })).mockImplementationOnce(() => ({ //page 2
+      reportsURLs: [3,4],
+    })).mockImplementationOnce(() => ({ //page 3
+      reportsURLs: [5,6],
+    }))
+
+    const reportStream = await scrape( { groupSize: 2, groupInterval: 1, startAtReportURI: 3, stopAtReportURI: 6  } )
+
+
+    let c = 0
+    reportStream.on('data', async(chunk) => {
+      switch( c ){
+        case 1:
+        case 2:
+        case 6:
+          throw new Error("Should not have scraped this report.")
+        default:
+         jest.runOnlyPendingTimers()
+      }
+    })
+
+    reportStream.on('end', () => {
+      expect( scrapeIndex ).toHaveBeenCalledTimes(3)
+      expect( scrapeReport ).toHaveBeenCalledTimes(3)
+      expect( scrapeReport ).toHaveBeenCalledWith( 3 )
+      expect( scrapeReport ).toHaveBeenCalledWith( 4 )
+      expect( scrapeReport ).toHaveBeenCalledWith( 5 )
+      done()
+    })
+
 
   })
 

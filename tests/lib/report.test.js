@@ -1,3 +1,11 @@
+const specialCases = require('../../lib/special-cases')
+
+jest.mock('../../lib/special-cases', () => ({
+  "https://domain.tld/path/to/page_override.html":{
+    startDate:( new Date() ).toISOString()
+  }
+}))
+
 const fs = require('fs')
 const request = require('request')
 const validateSchema = require('rwv-schema')
@@ -7,6 +15,9 @@ const scrapeReport = require('../../lib/report')
 const reportJson = require('../samples/report.json')
 //Mock HTTP requests
 jest.mock('request')
+
+
+
 
 //Use a pre-fetched sample report
 const sampleReport = fs.readFileSync('./tests/samples/report.html', 'utf8')
@@ -40,5 +51,16 @@ test( 'Report parsing error', async (done) => {
     expect(e).toBeInstanceOf( ReportParserError )
   }
   done()
+
+})
+
+test( 'Use special cases values', async() => {
+  request.mockImplementationOnce((...args) => {
+      const cb = args.pop()
+      cb( null, {statusCode: 200}, reportWithoutYear )
+  })
+
+  const result = await scrapeReport( 'https://domain.tld/path/to/page_override.html' )
+  expect( validateSchema(result) ).toBeTruthy()
 
 })
