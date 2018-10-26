@@ -26,6 +26,7 @@ const reportWithShortDateInSource = fs.readFileSync('./tests/samples/short_date_
 const daysSeparatedWithEm = fs.readFileSync('./tests/samples/daysSeparatedWithEm.html', 'utf8')
 const sourceWithMultipleDates = fs.readFileSync('./tests/samples/sourceWithMultipleDates.html', 'utf8')
 const anonymousSource =fs.readFileSync('./tests/samples/anonymousSource.html', 'utf8')
+const monthOnly = fs.readFileSync('./tests/samples/monthOnly.html', 'utf8')
 
 request.mockImplementation((...args) => {
   const cb = args.pop()
@@ -107,4 +108,16 @@ test( 'Add anonymous source if none available', async() => {
   const result = await scrapeReport( 'https://domain.tld/path/to/page.html' )
   expect( validateSchema(result) ).toBeTruthy()
   expect( result.sources[0].name ).toEqual('anonymous')
+})
+
+test( 'If only the month and year are provided record start date as 1st day of the month, and end date has 1st day of next month', async() => {
+  request.mockImplementationOnce((...args) => {
+    const cb = args.pop()
+    cb( null, {statusCode: 200}, monthOnly )
+  })
+  const result = await scrapeReport( 'https://domain.tld/path/to/page.html' )
+  expect( validateSchema(result) ).toBeTruthy()
+  expect( result.startDate ).toEqual( '2016-01-31T23:00:00.000Z' )
+  expect( result.endDate ).toEqual( '2016-02-29T23:00:00.000Z' )
+
 })
