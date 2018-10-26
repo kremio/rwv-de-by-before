@@ -28,6 +28,7 @@ const sourceWithMultipleDates = fs.readFileSync('./tests/samples/sourceWithMulti
 const anonymousSource =fs.readFileSync('./tests/samples/anonymousSource.html', 'utf8')
 const monthOnly = fs.readFileSync('./tests/samples/monthOnly.html', 'utf8')
 const yearOnly = fs.readFileSync('./tests/samples/yearOnly.html', 'utf8')
+const sourceDateWithDayOfWeek = fs.readFileSync('./tests/samples/sourceDateWithDayOfWeek.html', 'utf8')
 
 
 request.mockImplementation((...args) => {
@@ -132,5 +133,15 @@ test( 'If only the year is provided record start date as 1st january of the year
   expect( validateSchema(result) ).toBeTruthy()
   expect( result.startDate ).toEqual( '2015-01-01T00:00:00.000Z' )
   expect( result.endDate ).toEqual( '2015-12-31T00:00:00.000Z' )
-
 })
+
+test( 'Parse date starting with day of week', async() => {
+  request.mockImplementationOnce((...args) => {
+    const cb = args.pop()
+    cb( null, {statusCode: 200}, sourceDateWithDayOfWeek )
+  })
+  const result = await scrapeReport( 'https://domain.tld/path/to/page.html' )
+  expect( validateSchema(result) ).toBeTruthy()
+  expect( result.sources[1].publishedDate ).toEqual( '2014-12-11T00:00:00.000Z' )
+})
+
