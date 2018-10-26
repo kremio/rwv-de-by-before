@@ -65,6 +65,11 @@ module.exports = {
   "https://muenchen-chronik.de/25-oktober-2014-internationale-gesellschaft-fuer-menschenrechte-kundgebung/":{
     startDate: ( new Date('2014-10-25') ).toISOString(),
     title: "„Internationale Gesellschaft für Menschenrechte“ – Kundgebung"
+  },
+  //'bis' between dates
+  "https://muenchen-chronik.de/31-januar-2014-bis-2-februar-2014-die-neonazistische-swoboda-partei-beteiligt-sich-am-muenchener-mini-maidan/":{
+    startDate: ( new Date('2014-01-31') ).toISOString(),
+    endDate: ( new Date('2014-02-02') ).toISOString(),
+    title: "Swoboda Aktivisten beim Münchener „Mini-Maidan“"
   }
-  
 }
