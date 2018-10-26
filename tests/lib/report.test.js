@@ -27,6 +27,8 @@ const daysSeparatedWithEm = fs.readFileSync('./tests/samples/daysSeparatedWithEm
 const sourceWithMultipleDates = fs.readFileSync('./tests/samples/sourceWithMultipleDates.html', 'utf8')
 const anonymousSource =fs.readFileSync('./tests/samples/anonymousSource.html', 'utf8')
 const monthOnly = fs.readFileSync('./tests/samples/monthOnly.html', 'utf8')
+const yearOnly = fs.readFileSync('./tests/samples/yearOnly.html', 'utf8')
+
 
 request.mockImplementation((...args) => {
   const cb = args.pop()
@@ -119,5 +121,16 @@ test( 'If only the month and year are provided record start date as 1st day of t
   expect( validateSchema(result) ).toBeTruthy()
   expect( result.startDate ).toEqual( '2016-01-31T23:00:00.000Z' )
   expect( result.endDate ).toEqual( '2016-02-29T23:00:00.000Z' )
+})
+
+test( 'If only the year is provided record start date as 1st january of the year, and end date has 31st december of that year', async() => {
+  request.mockImplementationOnce((...args) => {
+    const cb = args.pop()
+    cb( null, {statusCode: 200}, yearOnly )
+  })
+  const result = await scrapeReport( 'https://domain.tld/path/to/page.html' )
+  expect( validateSchema(result) ).toBeTruthy()
+  expect( result.startDate ).toEqual( '2015-01-01T00:00:00.000Z' )
+  expect( result.endDate ).toEqual( '2015-12-31T00:00:00.000Z' )
 
 })
