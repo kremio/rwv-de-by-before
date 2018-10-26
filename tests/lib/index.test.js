@@ -37,3 +37,14 @@ test( 'Base test', async () => {
   const result = await scrapeIndex( 'https://domain.tld/path/to/page.html' )
   expect( result ).toEqual( expectedResult )
 })
+
+test( 'Page without link to last page with classname "last"', async () => {
+  const sampleIndex = fs.readFileSync('./tests/samples/indexNoLast.html', 'utf8')
+  request.mockImplementation((...args) => {
+    const cb = args.pop()
+    cb( null, {statusCode: 200}, sampleIndex )
+  })
+
+  const result = await scrapeIndex( 'https://domain.tld/path/to/page.html' )
+  expect( result.pageCount ).toEqual( 36 )
+})
