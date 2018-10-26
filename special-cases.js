@@ -61,6 +61,10 @@ module.exports = {
     startDate: ( new Date('2015-05-24') ).toISOString(),
     endDate: ( new Date('2015-05-31') ).toISOString(),
     title: "Der Dritte Weg – Flugblattverteilung gegen Geflüchtete"
+  },
+  "https://muenchen-chronik.de/25-oktober-2014-internationale-gesellschaft-fuer-menschenrechte-kundgebung/":{
+    startDate: ( new Date('2014-10-25') ).toISOString(),
+    title: "„Internationale Gesellschaft für Menschenrechte“ – Kundgebung"
   }
   
 }
