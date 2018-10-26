@@ -56,6 +56,11 @@ module.exports = {
     startDate: (new Date( "2016-03-01" ) ).toISOString(),
     endDate: (new Date( "2016-03-31" ) ).toISOString(),
     title: "Verurteilung wegen Übergriffen"
+  },
+  "https://muenchen-chronik.de/ende-mai-2015-der-dritte-weg-flugblattverteilung-gegen-gefluechtete/":{
+    startDate: ( new Date('2015-05-24') ).toISOString(),
+    endDate: ( new Date('2015-05-31') ).toISOString(),
+    title: "Der Dritte Weg – Flugblattverteilung gegen Geflüchtete"
   }
   
 }
