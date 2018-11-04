@@ -13,6 +13,7 @@ const {ReportParserError} = require('../../lib/errors')
 const scrapeReport = require('../../lib/report')
 
 const reportJson = require('../samples/report.json')
+const tagnamesJson = require('../samples/tagnames.json')
 //Mock HTTP requests
 jest.mock('request')
 
@@ -29,6 +30,7 @@ const anonymousSource =fs.readFileSync('./tests/samples/anonymousSource.html', '
 const monthOnly = fs.readFileSync('./tests/samples/monthOnly.html', 'utf8')
 const yearOnly = fs.readFileSync('./tests/samples/yearOnly.html', 'utf8')
 const sourceDateWithDayOfWeek = fs.readFileSync('./tests/samples/sourceDateWithDayOfWeek.html', 'utf8')
+const tagsAndSource = fs.readFileSync('./tests/samples/tagnames.html', 'utf8')
 
 
 request.mockImplementation((...args) => {
@@ -145,3 +147,11 @@ test( 'Parse date starting with day of week', async() => {
   expect( result.sources[1].publishedDate ).toEqual( '2014-12-11T00:00:00.000Z' )
 })
 
+test( 'Parse tags', async() => {
+  request.mockImplementationOnce((...args) => {
+    const cb = args.pop()
+    cb( null, {statusCode: 200}, tagsAndSource )
+  })
+  const result = await scrapeReport( 'https://domain.tld/path/to/page.html' )
+  expect( result ).toEqual( tagnamesJson )
+})
