@@ -102,7 +102,7 @@ test( 'Only use last date for source with multiple dates', async() => {
   })
   const result = await scrapeReport( 'https://domain.tld/path/to/page.html' )
   expect( validateSchema(result) ).toBeTruthy()
-  expect( result.sources[2].publishedDate ).toEqual( '2017-07-29T22:00:00.000Z' )
+  expect( result.sources[2].publishedDate ).toEqual( '2017-07-30T00:00:00.000+02:00' )
 })
 
 test( 'Add anonymous source if none available', async() => {
@@ -122,8 +122,8 @@ test( 'If only the month and year are provided record start date as 1st day of t
   })
   const result = await scrapeReport( 'https://domain.tld/path/to/page.html' )
   expect( validateSchema(result) ).toBeTruthy()
-  expect( result.startDate ).toEqual( '2016-01-31T23:00:00.000Z' )
-  expect( result.endDate ).toEqual( '2016-02-29T23:00:00.000Z' )
+  expect( result.startDate ).toEqual( '2016-02-01T00:00:00.000+01:00' )
+  expect( result.endDate ).toEqual( '2016-03-01T00:00:00.000+01:00' )
 })
 
 test( 'If only the year is provided record start date as 1st january of the year, and end date has 31st december of that year', async() => {
@@ -133,8 +133,8 @@ test( 'If only the year is provided record start date as 1st january of the year
   })
   const result = await scrapeReport( 'https://domain.tld/path/to/page.html' )
   expect( validateSchema(result) ).toBeTruthy()
-  expect( result.startDate ).toEqual( '2015-01-01T00:00:00.000Z' )
-  expect( result.endDate ).toEqual( '2015-12-31T00:00:00.000Z' )
+  expect( result.startDate ).toEqual( '2015-01-01T00:00:00.000+01:00' )
+  expect( result.endDate ).toEqual( '2015-12-31T00:00:00.000+01:00' )
 })
 
 test( 'Parse date starting with day of week', async() => {
@@ -144,7 +144,7 @@ test( 'Parse date starting with day of week', async() => {
   })
   const result = await scrapeReport( 'https://domain.tld/path/to/page.html' )
   expect( validateSchema(result) ).toBeTruthy()
-  expect( result.sources[1].publishedDate ).toEqual( '2014-12-11T00:00:00.000Z' )
+  expect( result.sources[1].publishedDate ).toEqual( '2014-12-11T00:00:00.000+01:00' )
 })
 
 test( 'Parse tags', async() => {
