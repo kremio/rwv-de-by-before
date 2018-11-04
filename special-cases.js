@@ -71,17 +71,5 @@ module.exports = {
     startDate: ( new Date('2014-01-31') ).toISOString(),
     endDate: ( new Date('2014-02-02') ).toISOString(),
     title: "Swoboda Aktivisten beim Münchener „Mini-Maidan“"
-  },
-  "https://muenchen-chronik.de/4-august-2018-auseinandersetzung-um-neonazistische-taetowierung/":{
-    sources: [
-		  {
-			  "name":"a.i.d.a.",
-			  "publishedDate":null,
-			  "url":null
-		  },{
-		    "name":"TZ",
-		    "publishedDate":"2018-08-07T00:00:00.000+02:00",
-		    "url":"http://www.tz.de"
-		  }]
   }
 }
