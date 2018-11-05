@@ -92,5 +92,13 @@ module.exports = {
       name:"TZ",
       publishedDate: ( new tc.DateTime("2016-07-14T00:00"+TIMEZONE) ).toIsoString(),
     }]
+  },
+  "https://muenchen-chronik.de/24-juni-2015-brandstiftung-an-moschee/":{
+    sources:[{
+      name:"a.i.d.a."
+    },{
+      name:"Pressebericht des Polizeipräsidiums München",
+      publishedDate: ( new tc.DateTime("2015-06-24T00:00"+TIMEZONE) ).toIsoString()
+    }]
   }
 }
