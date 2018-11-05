@@ -74,5 +74,23 @@ module.exports = {
     startDate: ( new tc.DateTime("2014-01-31T00:00"+TIMEZONE) ).toIsoString(),
     endDate: ( new tc.DateTime("2014-02-02T00:00"+TIMEZONE) ).toIsoString(),
     title: "Swoboda Aktivisten beim Münchener „Mini-Maidan“"
+  },
+  "https://muenchen-chronik.de/8-juli-2016/":{
+    sources:[{
+      name:"Pressebericht des Polizeipräsidiums München",
+      publishedDate: ( new tc.DateTime("2016-07-13T00:00"+TIMEZONE) ).toIsoString(),
+    },{
+      name:"Pressemeldung des Polizeipräsidiums München",
+      publishedDate: ( new tc.DateTime("2016-07-14T00:00"+TIMEZONE) ).toIsoString(),
+    },{
+      name:"Pressemeldung des Polizeipräsidiums München",
+      publishedDate: ( new tc.DateTime("2016-07-18T00:00"+TIMEZONE) ).toIsoString(),
+    },{
+      name:"Süddeutschen Zeitung",
+      publishedDate: ( new tc.DateTime("2016-07-13T00:00"+TIMEZONE) ).toIsoString(),
+    },{
+      name:"TZ",
+      publishedDate: ( new tc.DateTime("2016-07-14T00:00"+TIMEZONE) ).toIsoString(),
+    }]
   }
 }
