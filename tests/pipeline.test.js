@@ -138,7 +138,7 @@ describe( 'Scraper pipeline', () => {
       await pipeline()
     }catch(e){}
 
-    expect( scrape ).toBeCalledWith( expect.objectContaining({
+    expect( scrape ).toBeCalledWith( db.db, expect.objectContaining({
       startAtPageURL: errorPageURL,
       startAtReportURI: errorReportURI
     }), expect.anything() )
@@ -162,7 +162,7 @@ describe( 'Scraper pipeline', () => {
       await pipeline()
     }catch(e){}
 
-    expect( scrape ).toBeCalledWith( expect.objectContaining({
+    expect( scrape ).toBeCalledWith( db.db, expect.objectContaining({
       startAtPageURL: errorPageURL,
       startAtReportURI: false
     }), expect.anything() )
@@ -179,12 +179,14 @@ describe( 'Scraper pipeline', () => {
 
     const _pipeline = require('../pipeline')
     const _scrape = require('../scrape')
+    const {DB} = await require('rwv-sqlite/lib/db')()
+    db = DB
     
     try{
       await _pipeline()
     }catch(e){}
 
-    expect( _scrape ).toBeCalledWith( expect.objectContaining({
+    expect( _scrape ).toBeCalledWith( db.db, expect.objectContaining({
       startAtPageURL: process.env.MORPH_START_PAGE,
       startAtReportURI: process.env.MORPH_START_REPORT
     }), expect.anything() )
@@ -211,7 +213,7 @@ describe( 'Scraper pipeline', () => {
       await _pipeline()
     }catch(e){}
 
-    expect( _scrape ).toBeCalledWith( expect.objectContaining({
+    expect( _scrape ).toBeCalledWith( db.db, expect.objectContaining({
       startAtPageURL: process.env.MORPH_START_PAGE,
       startAtReportURI: process.env.MORPH_START_REPORT
     }), expect.anything() )

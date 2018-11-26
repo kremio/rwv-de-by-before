@@ -1,3 +1,4 @@
+const { promisify } = require('util')
 const { Readable } = require('stream')
 
 const scrapeIndex = require('./lib/index')
@@ -62,7 +63,8 @@ class ReportStream extends Readable{
 
 
 class RequestsQueue  {
-  constructor( pageCount, reportsURLs = [], groupSize, groupInterval, startPageURL, startAtReportURI = false, stopAtReportURI ){
+  constructor( db, pageCount, reportsURLs = [], groupSize, groupInterval, startPageURL, startAtReportURI = false, stopAtReportURI, alreadyScrapedLimit = 10 ){
+    this.db = db
     this.pageCount = pageCount
     this.currentPage = pageNumberOfURL(startPageURL)
     this.initialReportsURLs = reportsURLs
@@ -75,6 +77,8 @@ class RequestsQueue  {
 
     this.startAtReportURI = startAtReportURI
     this.stopAtReportURI = stopAtReportURI
+    this.alreadyScrapedLimit = alreadyScrapedLimit
+    this.howManyAlreadyScraped = 0
     this.timeout
     this.started = false
     this.done = false
@@ -82,6 +86,8 @@ class RequestsQueue  {
     this.onData = () => true
     this.onEnd = () => {}
     this.onError = (error) => { console.error(error) }
+
+
   }
 
   get reportsURLs(){
@@ -113,8 +119,26 @@ class RequestsQueue  {
       this.started = true
       //Sets the initial reportURLs
       this.reportsURLs = this.initialReportsURLs
-      this.next()
+      this.filterAlreadyScraped().then( () =>  this.next() )
     }
+  }
+
+  /*
+   * Check if the database already contains some of the reports in reportsURLs,
+   * if any found, remove them from reportsURLs and add there count to
+   * howManyAlreadyScraped
+   */
+  async filterAlreadyScraped(){
+    //Get the existing reports' URIs
+    const countStatement = this.db.prepare( `SELECT uri FROM data WHERE uri IN (${this.reportsURLs.map(() => '?').join(',')})`, this.reportsURLs )
+    const asyncAll = promisify(countStatement.all).bind(countStatement)
+    const alreadyInDb = (await asyncAll()).map((row) => row.uri)
+    countStatement.finalize()
+
+    //Filter out the existing reports
+    this.reportsURLs = this.reportsURLs.filter((uri) => !alreadyInDb.includes( uri ))
+    //Update the count
+    this.howManyAlreadyScraped += alreadyInDb.length
   }
 
   async next(){
@@ -130,10 +154,16 @@ class RequestsQueue  {
         return
       }
       if( this.reportsURLs.length == 0 ){ //all the reports of the page have been processed
+        if(this.howManyAlreadyScraped >= this.alreadyScrapedLimit){
+          //looks like there is nothing new, let's call it a day
+          this.onEnd() //done
+          return
+        }
         //Load next page
         this.currentPage++
         const {reportsURLs} = await scrapeIndex( urlOfPage( this.currentPage ) )
         this.reportsURLs = reportsURLs
+        await this.filterAlreadyScraped()
         return this.next()
       }
 
@@ -181,14 +211,15 @@ class RequestsQueue  {
   }
 }
 
-const scrape = async (options, verbose = false) => {
+const scrape = async (db, options, verbose = false) => {
   //Override defaults with given options
   const opts = Object.assign({
     groupSize: 5,
     groupInterval: 30000, //in ms
     stopAtReportURI: false,
     startAtReportURI: false,
-    startAtPageURL: DEFAULT_INDEX_URL
+    startAtPageURL: DEFAULT_INDEX_URL,
+    alreadyScrapedLimit: 10
   }, options)
 
   if(verbose){
@@ -199,7 +230,7 @@ const scrape = async (options, verbose = false) => {
 
   const {reportsURLs, pageCount} = await scrapeIndex( opts.startAtPageURL )
 
-  const queue = new RequestsQueue( pageCount, reportsURLs, opts.groupSize, opts.groupInterval, opts.startAtPageURL, opts.startAtReportURI, opts.stopAtReportURI )
+  const queue = new RequestsQueue( db, pageCount, reportsURLs, opts.groupSize, opts.groupInterval, opts.startAtPageURL, opts.startAtReportURI, opts.stopAtReportURI, opts.alreadyScrapedLimit )
   return new ReportStream(queue)
 }
 

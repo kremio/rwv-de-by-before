@@ -1,7 +1,10 @@
 //const fs = require('fs')
 const scrapeIndex = require('../lib/index')
 const scrapeReport = require('../lib/report')
+const getDB = require('rwv-sqlite/lib/db')
+const reportTable = require('rwv-sqlite/lib/report')
 const scrape = require('../scrape')
+
 
 const { DEFAULT_INDEX_URL, FIRST_PAGE, urlOfPage } = require('../lib/constants')
 //const reportJson = require('../samples/report.json')
@@ -14,11 +17,27 @@ jest.useFakeTimers()
 
 describe('Scraper stream', () => {
 
-  beforeEach(() => {
+  let db
+
+  beforeEach( async (done) =>  {
     setTimeout.mockClear()
     scrapeIndex.mockReset()
     scrapeReport.mockReset()
+    
+    getDB().then( ({DB, migrations}) =>{
+      db = DB
+      //Start with a clean database
+      migrations.reset( () => migrations.up( done ) )
+    })
   })
+
+  afterEach( () => {
+    if(db){
+      db.close()
+      db = undefined
+    }
+  })
+
 
   test( 'No URLs, one page', async (done) => {
 
@@ -27,7 +46,7 @@ describe('Scraper stream', () => {
       pageCount: 1
     }))
 
-    const reportStream = await scrape()
+    const reportStream = await scrape( db.db )
     expect( scrapeIndex ).toHaveBeenCalledTimes(1)
 
     reportStream.resume()//pipe( process.stdout )
@@ -47,7 +66,7 @@ describe('Scraper stream', () => {
 
     let c = 0
     const longWait = 999999
-    const reportStream = await scrape( { groupSize: 2, groupInterval: longWait } )
+    const reportStream = await scrape( db.db, { groupSize: 2, groupInterval: longWait } )
 
     reportStream.on('data', async(chunk) => {
       if( c % 2 == 0 ){
@@ -84,7 +103,7 @@ describe('Scraper stream', () => {
       reportsURLs: [4,5],
     }))
 
-    const reportStream = await scrape( { groupSize: 2, groupInterval: 1000 } )
+    const reportStream = await scrape( db.db , { groupSize: 2, groupInterval: 1000 } )
 
     let c = 0
     reportStream.on('data', async(chunk) => {
@@ -122,7 +141,7 @@ describe('Scraper stream', () => {
       reportsURLs: [4,5],
     }))
 
-    const reportStream = await scrape( { groupSize: 2, groupInterval: 1 } )
+    const reportStream = await scrape( db.db, { groupSize: 2, groupInterval: 1 } )
 
     let c = 0
     reportStream.on('data', async(chunk) => {
@@ -158,7 +177,7 @@ describe('Scraper stream', () => {
       reportsURLs: [4],
     }))
     
-    const reportStream = await scrape( { startAtPageURL, startAtReportURI, groupSize: 2, groupInterval: 1, stopAtReportURI: 1  } )
+    const reportStream = await scrape( db.db, { startAtPageURL, startAtReportURI, groupSize: 2, groupInterval: 1, stopAtReportURI: 1  } )
 
     let c = 0
     reportStream.on('data', async(chunk) => {
@@ -192,7 +211,7 @@ describe('Scraper stream', () => {
       reportsURLs: [4],
     }))
 
-    const reportStream = await scrape( { startAtPageURL, startAtReportURI, groupSize: 2, groupInterval: 1, stopAtReportURI: 1  } )
+    const reportStream = await scrape( db.db, { startAtPageURL, startAtReportURI, groupSize: 2, groupInterval: 1, stopAtReportURI: 1  } )
 
     reportStream.on('data', async(chunk) => {
       throw new Error("Should not have scraped this report.")
@@ -216,7 +235,7 @@ describe('Scraper stream', () => {
       reportsURLs: [4,5],
     }))
 
-    const reportStream = await scrape( { groupSize: 2, groupInterval: 1, stopAtReportURI: 3  } )
+    const reportStream = await scrape( db.db, { groupSize: 2, groupInterval: 1, stopAtReportURI: 3  } )
 
 
     let c = 0
@@ -255,7 +274,7 @@ describe('Scraper stream', () => {
       reportsURLs: [5,6],
     }))
 
-    const reportStream = await scrape( { groupSize: 2, groupInterval: 1, startAtReportURI: 3, stopAtReportURI: 6  } )
+    const reportStream = await scrape( db.db, { groupSize: 2, groupInterval: 1, startAtReportURI: 3, stopAtReportURI: 6  } )
 
 
     let c = 0
@@ -290,7 +309,7 @@ describe('Scraper stream', () => {
       reportsURLs: [3],
     }))
 
-    const reportStream = await scrape( { groupSize: 2, groupInterval: 1 } )
+    const reportStream = await scrape( db.db, { groupSize: 2, groupInterval: 1 } )
     
     let c = 1
     scrapeReport.mockImplementation((d) => d)
@@ -320,7 +339,7 @@ describe('Scraper stream', () => {
       pageCount: 3
     }))
 
-    const reportStream = await scrape( { groupSize: 2, groupInterval: 1, stopAtReportURI: 1  } )
+    const reportStream = await scrape( db.db, { groupSize: 2, groupInterval: 1, stopAtReportURI: 1  } )
 
 
     reportStream.on('data', (chunk) => {
@@ -353,7 +372,7 @@ describe('Scraper stream', () => {
       }
     })
 
-    const reportStream = await scrape( { groupSize: 2, groupInterval: 1  } )
+    const reportStream = await scrape( db.db, { groupSize: 2, groupInterval: 1  } )
 
 
     reportStream.on('error', (err) => {
@@ -371,6 +390,59 @@ describe('Scraper stream', () => {
       jest.runOnlyPendingTimers()
     })
 
+
+  })
+
+  test( 'Stop parsing after already scraped limit reached', async (done) => {
+    scrapeIndex.mockImplementationOnce(() => ({ //page 1
+      reportsURLs: ['http://1','http://2'],
+      pageCount: 3
+    })).mockImplementationOnce(() => ({ //page 2
+      reportsURLs: ['http://3','http://4'],
+    })).mockImplementationOnce(() => ({ //page 3
+      reportsURLs: ['http://5','http://6'],
+    }))
+
+    //Add reports to the DB
+    const baseReport = {
+      description:'description',
+      startDate: new Date().toISOString(),
+      iso3166_2: 'DE-BE',
+      locations: [{
+        subdivisions:['somewhere','over the rainbow'],
+      }],
+      sources: [{
+        name:'source'
+      }]
+    }
+    await reportTable( {...baseReport, uri:'http://1' }, db )
+    await reportTable( {...baseReport, uri:'http://2' }, db )
+    await reportTable( {...baseReport, uri:'http://4' }, db )
+
+
+    const reportStream = await scrape( db.db, { groupSize: 2, groupInterval: 1, alreadyScrapedLimit: 3 } )
+
+
+    let c = 0
+    reportStream.on('data', async(chunk) => {
+      switch( c ){
+        case 'http://1':
+        case 'http://2':
+        case 'http://4':
+        case 'http://5':
+        case 'http://6':
+          throw new Error("Should not have scraped this report.")
+        default:
+         jest.runOnlyPendingTimers()
+      }
+    })
+
+    reportStream.on('end', () => {
+      expect( scrapeIndex ).toHaveBeenCalledTimes(2)
+      expect( scrapeReport ).toHaveBeenCalledTimes(1)
+      expect( scrapeReport ).toHaveBeenCalledWith( 'http://3' )
+      done()
+    })
 
   })
 

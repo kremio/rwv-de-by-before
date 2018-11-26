@@ -17,16 +17,17 @@ const pipeline = async () => getDB( path.resolve('./config/database.json'), fals
   .then( ({DB, migrations}) => new Promise( (s,f) => {
     dbHandle = DB
     //Get the newest inserted report, if any
-    DB.db.get('SELECT uri FROM data ORDER BY createdDate ASC LIMIT 1', (err, row) => {
+    /*DB.db.get('SELECT uri FROM data ORDER BY createdDate ASC LIMIT 1', (err, row) => {
       if(err){
         f(err)
         return
       }
       insert = new InsertStream({}, DB)
       s( {stopAtReportURI: row ? row.uri : false} )
-    })
-  })
-  )
+      })*/
+    insert = new InsertStream({}, DB)
+    s( {} )
+  }) )
   .then( async (scraperOptions) => {
 
     //Parameters passed by env variables have priority
@@ -52,7 +53,7 @@ const pipeline = async () => getDB( path.resolve('./config/database.json'), fals
       startAtPageURL: error.pageURL
     })
   })
-  .then( (scraperOptions) => scrape(scraperOptions, true) )
+  .then( (scraperOptions) => scrape(dbHandle.db, scraperOptions, true) )
   .then( (scraperStream) => {
     source = scraperStream
   })
