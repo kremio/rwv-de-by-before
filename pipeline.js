@@ -37,9 +37,12 @@ const pipeline = async () => getDB( path.resolve('./config/database.json'), fals
       })
     }
 
-    //Check if they are any error from which to start from
-    const error = await errorTable.get( dbHandle )
-    //Consume the error
+    let error
+    if( !process.env.MORPH_CLEAR_ERROR || process.env.MORPH_CLEAR_ERROR != 'clear' ){
+      //Check if they are any error from which to start from
+      error = await errorTable.get( dbHandle )
+    }
+    //Consume all errors
     await errorTable.clear( dbHandle )
     if(!error){
       return scraperOptions
