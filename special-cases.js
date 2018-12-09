@@ -106,4 +106,8 @@ module.exports = {
     endDate: ( new tc.DateTime("2018-11-04T21:00"+TIMEZONE) ).toIsoString(),
     title: "Hakenkreuz-Schmiererei an Arztpraxis"
   },
+  "https://muenchen-chronik.de/29-oktober-antisemitische-und-neonazistische-graffiti/":{
+    startDate: ( new tc.DateTime("2018-10-29T09:00"+TIMEZONE) ).toIsoString(),
+    title: "Antisemitische und neonazistische Graffiti"
+  }
 }
