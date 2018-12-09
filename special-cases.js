@@ -100,5 +100,10 @@ module.exports = {
       name:"Pressebericht des Polizeipräsidiums München",
       publishedDate: ( new tc.DateTime("2015-06-24T00:00"+TIMEZONE) ).toIsoString()
     }]
-  }
+  },
+  "https://muenchen-chronik.de/31-oktober-4-november-2018-hakenkreuz-schmiererei-an-arztpraxis/":{
+    startDate: ( new tc.DateTime("2018-10-31T20:00"+TIMEZONE) ).toIsoString(),
+    endDate: ( new tc.DateTime("2018-11-04T21:00"+TIMEZONE) ).toIsoString(),
+    title: "Hakenkreuz-Schmiererei an Arztpraxis"
+  },
 }
