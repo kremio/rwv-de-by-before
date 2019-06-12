@@ -109,5 +109,16 @@ module.exports = {
   "https://muenchen-chronik.de/29-oktober-antisemitische-und-neonazistische-graffiti/":{
     startDate: ( new tc.DateTime("2018-10-29T09:00"+TIMEZONE) ).toIsoString(),
     title: "Antisemitische und neonazistische Graffiti"
+  },
+  "https://muenchen-chronik.de/8-mai-2019-hitlergruss-vor-synagoge/":{
+    sources:[{
+      name:"a.i.d.a."
+    },{
+      name:"Pressemitteilungen des Polizeipräsidiums München",
+      publishedDate: ( new tc.DateTime("2019-05-10T00:00"+TIMEZONE) ).toIsoString()
+    },{
+      name:"Pressemitteilungen des Polizeipräsidiums München",
+      publishedDate: ( new tc.DateTime("2019-05-23T00:00"+TIMEZONE) ).toIsoString()
+    }]
   }
 }
